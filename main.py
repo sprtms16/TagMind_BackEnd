@@ -104,6 +104,67 @@ async def delete_diary(
     crud.delete_diary(db=db, diary_id=diary_id)
     return
 
+# AI Tagging and Feedback
+@app.post("/ai/tagging", response_model=schemas.DiaryResponse)
+async def ai_tagging(
+    diary_id: int,
+    current_user: schemas.UserResponse = Depends(auth.get_current_user),
+    db: Session = Depends(get_db),
+):
+    db_diary = crud.get_diary(db, diary_id=diary_id)
+    if db_diary is None or db_diary.user_id != current_user.id:
+        raise HTTPException(status_code=404, detail="Diary not found")
+
+    # v0.1: Rule-based tagging
+    rule_tags = ai_service.rule_based_tagging(db_diary.content)
+    for tag_name in rule_tags:
+        db_tag = crud.get_tag_by_name(db, tag_name=tag_name)
+        if not db_tag:
+            db_tag = crud.create_tag(db=db, tag=schemas.TagCreate(name=tag_name))
+        crud.add_tag_to_diary(db=db, diary_id=diary_id, tag_id=db_tag.id, source="ai_rule")
+
+    # v0.5: External AI API (Gemini) integration
+    gemini_result = await ai_service.gemini_analyze_text(db_diary.content)
+    if not gemini_result.get("mock_data"): # Only process if not mock data
+        # Process sentiment
+        sentiment_data = gemini_result.get("sentiment")
+        if sentiment_data:
+            # Update or create AnalysisResult for sentiment
+            pass # Implementation for AnalysisResult update/create
+
+        # Process entities as tags
+        entities = gemini_result.get("entities", [])
+        for entity in entities:
+            tag_name = entity.get("text")
+            if tag_name:
+                db_tag = crud.get_tag_by_name(db, tag_name=tag_name)
+                if not db_tag:
+                    db_tag = crud.create_tag(db=db, tag=schemas.TagCreate(name=tag_name))
+                crud.add_tag_to_diary(db=db, diary_id=diary_id, tag_id=db_tag.id, source="ai_model")
+
+    db.refresh(db_diary) # Refresh to get updated tags
+    return db_diary
+
+@app.post("/ai/feedback", status_code=status.HTTP_204_NO_CONTENT)
+async def ai_feedback(
+    diary_id: int,
+    tag_id: int,
+    action: str, # "add" or "remove"
+    current_user: schemas.UserResponse = Depends(auth.get_current_user),
+    db: Session = Depends(get_db),
+):
+    db_diary = crud.get_diary(db, diary_id=diary_id)
+    if db_diary is None or db_diary.user_id != current_user.id:
+        raise HTTPException(status_code=404, detail="Diary not found")
+
+    if action == "add":
+        crud.add_tag_to_diary(db=db, diary_id=diary_id, tag_id=tag_id, source="user_feedback")
+    elif action == "remove":
+        crud.remove_tag_from_diary(db=db, diary_id=diary_id, tag_id=tag_id)
+    else:
+        raise HTTPException(status_code=400, detail="Invalid action. Must be 'add' or 'remove'")
+    return
+
 # Tag operations
 @app.post("/diaries/{diary_id}/tags", response_model=schemas.DiaryResponse)
 async def add_tag_to_diary(
