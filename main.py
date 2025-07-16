@@ -195,8 +195,45 @@ async def remove_tag_from_diary(
     if db_diary is None or db_diary.user_id != current_user.id:
         raise HTTPException(status_code=404, detail="Diary not found")
 
-    crud.remove_tag_from_diary(db=db, diary_id=diary_id, tag_id=tag_id)
+    crud.remove_tag_from_diary(db=db, diary_id=diary_id)
     return
+
+# Analytics API
+@app.get("/analytics/mood-over-time", response_model=List[schemas.MoodOverTimeResponse])
+async def get_mood_over_time(
+    current_user: schemas.UserResponse = Depends(auth.get_current_user),
+    db: Session = Depends(get_db),
+):
+    # Placeholder for actual mood analysis logic
+    # This would involve querying AnalysisResult table and aggregating sentiment scores over time.
+    return [
+        {"date": "2024-01-01", "mood_score": 0.7},
+        {"date": "2024-01-02", "mood_score": 0.8},
+        {"date": "2024-01-03", "mood_score": 0.6},
+    ]
+
+@app.get("/analytics/tag-correlation", response_model=List[schemas.TagCorrelationResponse])
+async def get_tag_correlation(
+    current_user: schemas.UserResponse = Depends(auth.get_current_user),
+    db: Session = Depends(get_db),
+):
+    # Placeholder for actual tag correlation logic
+    # This would involve analyzing co-occurrence of tags in diaries.
+    return [
+        {"tag1": "운동", "tag2": "행복", "correlation_score": 0.75},
+        {"tag1": "공부", "tag2": "성장", "correlation_score": 0.82},
+    ]
+
+# Payment API (Placeholder)
+@app.post("/payment/process", response_model=schemas.PaymentResponse)
+async def process_payment(
+    payment_request: schemas.PaymentRequest,
+    current_user: schemas.UserResponse = Depends(auth.get_current_user),
+):
+    # Placeholder for actual payment gateway integration (e.g., Stripe, Toss Payments)
+    # In a real scenario, you would interact with a payment gateway API.
+    print(f"Processing payment for user {current_user.email}: {payment_request.amount} {payment_request.currency}")
+    return {"transaction_id": "mock_txn_12345", "status": "success"}
 
 # Search operations
 @app.get("/search", response_model=List[schemas.DiaryResponse])

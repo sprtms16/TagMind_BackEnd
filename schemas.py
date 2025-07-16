@@ -42,7 +42,7 @@ class DiaryResponse(BaseModel):
     image_url: Optional[str] = None
     created_at: datetime
     updated_at: datetime
-    diary_tags: List[DiaryTagResponse] = []
+    diary_tags: List[TagResponse] = [] # Changed to TagResponse for simplicity
 
     class Config:
         orm_mode = True
@@ -64,3 +64,21 @@ class DiaryTagResponse(BaseModel):
 
     class Config:
         orm_mode = True
+
+class MoodOverTimeResponse(BaseModel):
+    date: str
+    mood_score: float
+
+class TagCorrelationResponse(BaseModel):
+    tag1: str
+    tag2: str
+    correlation_score: float
+
+class PaymentRequest(BaseModel):
+    amount: float
+    currency: str
+    description: str
+
+class PaymentResponse(BaseModel):
+    transaction_id: str
+    status: str
