@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 
 class UserCreate(BaseModel):
@@ -42,6 +42,25 @@ class DiaryResponse(BaseModel):
     image_url: Optional[str] = None
     created_at: datetime
     updated_at: datetime
+    diary_tags: List[DiaryTagResponse] = []
+
+    class Config:
+        orm_mode = True
+
+class TagCreate(BaseModel):
+    name: str
+
+class TagResponse(BaseModel):
+    id: int
+    name: str
+
+    class Config:
+        orm_mode = True
+
+class DiaryTagResponse(BaseModel):
+    tag_id: int
+    source: str
+    tag: TagResponse
 
     class Config:
         orm_mode = True

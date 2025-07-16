@@ -103,3 +103,51 @@ async def delete_diary(
         raise HTTPException(status_code=404, detail="Diary not found")
     crud.delete_diary(db=db, diary_id=diary_id)
     return
+
+# Tag operations
+@app.post("/diaries/{diary_id}/tags", response_model=schemas.DiaryResponse)
+async def add_tag_to_diary(
+    diary_id: int,
+    tag_create: schemas.TagCreate,
+    current_user: schemas.UserResponse = Depends(auth.get_current_user),
+    db: Session = Depends(get_db),
+):
+    db_diary = crud.get_diary(db, diary_id=diary_id)
+    if db_diary is None or db_diary.user_id != current_user.id:
+        raise HTTPException(status_code=404, detail="Diary not found")
+
+    db_tag = crud.get_tag_by_name(db, tag_name=tag_create.name)
+    if not db_tag:
+        db_tag = crud.create_tag(db=db, tag=tag_create)
+
+    crud.add_tag_to_diary(db=db, diary_id=diary_id, tag_id=db_tag.id)
+    return db_diary
+
+@app.delete("/diaries/{diary_id}/tags/{tag_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def remove_tag_from_diary(
+    diary_id: int,
+    tag_id: int,
+    current_user: schemas.UserResponse = Depends(auth.get_current_user),
+    db: Session = Depends(get_db),
+):
+    db_diary = crud.get_diary(db, diary_id=diary_id)
+    if db_diary is None or db_diary.user_id != current_user.id:
+        raise HTTPException(status_code=404, detail="Diary not found")
+
+    crud.remove_tag_from_diary(db=db, diary_id=diary_id, tag_id=tag_id)
+    return
+
+# Search operations
+@app.get("/search", response_model=List[schemas.DiaryResponse])
+async def search_diaries(
+    query: str,
+    current_user: schemas.UserResponse = Depends(auth.get_current_user),
+    db: Session = Depends(get_db),
+):
+    # This is a basic search. For full-text search, consider using PostgreSQL's FTS features
+    # or a dedicated search engine like Elasticsearch.
+    search_results = db.query(models.Diary).join(models.DiaryTag).join(models.Tag).filter(
+        models.Diary.user_id == current_user.id,
+        (models.Diary.content.ilike(f"%{query}%") | models.Tag.name.ilike(f"%{query}%"))
+    ).distinct().all()
+    return search_results

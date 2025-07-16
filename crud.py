@@ -48,3 +48,30 @@ def delete_diary(db: Session, diary_id: int):
         db.delete(db_diary)
         db.commit()
     return db_diary
+
+def get_tag_by_name(db: Session, tag_name: str):
+    return db.query(models.Tag).filter(models.Tag.name == tag_name).first()
+
+def create_tag(db: Session, tag: schemas.TagCreate):
+    db_tag = models.Tag(name=tag.name)
+    db.add(db_tag)
+    db.commit()
+    db.refresh(db_tag)
+    return db_tag
+
+def add_tag_to_diary(db: Session, diary_id: int, tag_id: int, source: str = "manual"):
+    db_diary_tag = models.DiaryTag(diary_id=diary_id, tag_id=tag_id, source=source)
+    db.add(db_diary_tag)
+    db.commit()
+    db.refresh(db_diary_tag)
+    return db_diary_tag
+
+def remove_tag_from_diary(db: Session, diary_id: int, tag_id: int):
+    db_diary_tag = db.query(models.DiaryTag).filter(
+        models.DiaryTag.diary_id == diary_id,
+        models.DiaryTag.tag_id == tag_id
+    ).first()
+    if db_diary_tag:
+        db.delete(db_diary_tag)
+        db.commit()
+    return db_diary_tag
