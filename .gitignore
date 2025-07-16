@@ -23,3 +23,6 @@ Desktop.ini
 
 # Sensitive files
 *.env
+
+# Temporary files
+commit_message.txt
