@@ -26,3 +26,22 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     email: Optional[str] = None
+
+class DiaryCreate(BaseModel):
+    content: str
+    image_url: Optional[str] = None
+
+class DiaryUpdate(BaseModel):
+    content: Optional[str] = None
+    image_url: Optional[str] = None
+
+class DiaryResponse(BaseModel):
+    id: int
+    user_id: int
+    content: str
+    image_url: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        orm_mode = True
