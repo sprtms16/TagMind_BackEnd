@@ -1,5 +1,5 @@
 import os
-from typing import List, Dict
+from typing import List, Dict, Optional
 import google.generativeai as genai
 import boto3
 from botocore.exceptions import ClientError
@@ -78,7 +78,7 @@ async def gemini_analyze_text(text: str) -> Dict:
             "mock_data": True
         }
 
-async def upload_image_to_s3(file_content: bytes, file_name: str, content_type: str) -> str | None:
+async def upload_image_to_s3(file_content: bytes, file_name: str, content_type: str) -> Optional[str]:
     if not s3_client:
         print("[S3 Service] AWS credentials not configured. Skipping S3 upload.")
         return None
