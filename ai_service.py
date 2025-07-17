@@ -1,11 +1,28 @@
 import os
 from typing import List, Dict
 import google.generativeai as genai
+import boto3
+from botocore.exceptions import ClientError
 
 # Configure the Gemini API key
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 if GEMINI_API_KEY:
     genai.configure(api_key=GEMINI_API_KEY)
+
+# Configure AWS S3
+AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
+AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
+AWS_S3_BUCKET_NAME = os.getenv("AWS_S3_BUCKET_NAME")
+AWS_REGION = os.getenv("AWS_REGION", "ap-northeast-2") # Default to Seoul region
+
+s3_client = None
+if AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY:
+    s3_client = boto3.client(
+        's3',
+        aws_access_key_id=AWS_ACCESS_KEY_ID,
+        aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+        region_name=AWS_REGION
+    )
 
 # Placeholder for rule-based tagging (v0.1)
 def rule_based_tagging(text: str) -> List[str]:
@@ -60,3 +77,28 @@ async def gemini_analyze_text(text: str) -> Dict:
             "entities": [],
             "mock_data": True
         }
+
+async def upload_image_to_s3(file_content: bytes, file_name: str, content_type: str) -> str | None:
+    if not s3_client:
+        print("[S3 Service] AWS credentials not configured. Skipping S3 upload.")
+        return None
+    if not AWS_S3_BUCKET_NAME:
+        print("[S3 Service] S3 bucket name not configured. Skipping S3 upload.")
+        return None
+
+    try:
+        s3_client.put_object(
+            Bucket=AWS_S3_BUCKET_NAME,
+            Key=file_name,
+            Body=file_content,
+            ContentType=content_type
+        )
+        image_url = f"https://{AWS_S3_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com/{file_name}"
+        print(f"[S3 Service] Image uploaded to S3: {image_url}")
+        return image_url
+    except ClientError as e:
+        print(f"[S3 Service] Error uploading to S3: {e}")
+        return None
+    except Exception as e:
+        print(f"[S3 Service] An unexpected error occurred during S3 upload: {e}")
+        return None

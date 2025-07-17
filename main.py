@@ -99,12 +99,32 @@ async def read_users_me(current_user: schemas.UserResponse = Depends(auth.get_cu
 @app.post("/diaries", response_model=schemas.DiaryResponse)
 async def create_diary(
     background_tasks: BackgroundTasks,
-    diary: schemas.DiaryCreate = Body(...),
+    title: str = Body(...),
+    content: str = Body(...),
+    tags: List[str] = Body([]),
+    image_file: Optional[UploadFile] = File(None),
     current_user: schemas.UserResponse = Depends(auth.get_current_user),
     db: Session = Depends(get_db),
 ):
+    image_url = None
+    if image_file:
+        try:
+            file_content = await image_file.read()
+            file_name = f"{current_user.id}_{uuid.uuid4()}_{image_file.filename}"
+            image_url = await ai_service.upload_image_to_s3(file_content, file_name, image_file.content_type)
+            if not image_url:
+                raise HTTPException(status_code=500, detail="Failed to upload image to S3")
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Image upload failed: {e}")
+
     try:
-        db_diary = crud.create_diary(db=db, diary=diary, user_id=current_user.id)
+        diary_create_data = schemas.DiaryCreate(
+            title=title,
+            content=content,
+            image_url=image_url,
+            tags=tags
+        )
+        db_diary = crud.create_diary(db=db, diary=diary_create_data, user_id=current_user.id)
         background_tasks.add_task(run_ai_tagging_in_background, db_diary.id, db_diary.content, db)
         return db_diary
     except Exception as e:

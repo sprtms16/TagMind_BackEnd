@@ -35,7 +35,6 @@ class DiaryCreate(BaseModel):
 
 class DiaryUpdate(BaseModel):
     content: Optional[str] = None
-    image_url: Optional[str] = None
 
 class TagCreate(BaseModel):
     name: str
