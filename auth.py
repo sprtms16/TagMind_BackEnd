@@ -6,8 +6,8 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
-from . import schemas, crud, models
-from .database import SessionLocal
+import schemas, crud, models
+from database import SessionLocal
 import os
 
 SECRET_KEY = os.getenv("JWT_SECRET_KEY")

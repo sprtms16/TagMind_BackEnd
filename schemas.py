@@ -28,24 +28,14 @@ class TokenData(BaseModel):
     email: Optional[str] = None
 
 class DiaryCreate(BaseModel):
+    title: str
     content: str
     image_url: Optional[str] = None
+    tags: List[str] = []
 
 class DiaryUpdate(BaseModel):
     content: Optional[str] = None
     image_url: Optional[str] = None
-
-class DiaryResponse(BaseModel):
-    id: int
-    user_id: int
-    content: str
-    image_url: Optional[str] = None
-    created_at: datetime
-    updated_at: datetime
-    diary_tags: List[TagResponse] = [] # Changed to TagResponse for simplicity
-
-    class Config:
-        orm_mode = True
 
 class TagCreate(BaseModel):
     name: str
@@ -61,6 +51,19 @@ class DiaryTagResponse(BaseModel):
     tag_id: int
     source: str
     tag: TagResponse
+
+    class Config:
+        orm_mode = True
+
+class DiaryResponse(BaseModel):
+    id: int
+    user_id: int
+    title: str
+    content: str
+    image_url: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+    diary_tags: List[DiaryTagResponse] = [] # Changed to DiaryTagResponse
 
     class Config:
         orm_mode = True

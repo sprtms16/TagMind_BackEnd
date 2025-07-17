@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from . import models, schemas
+import models, schemas
 from passlib.context import CryptContext
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -22,8 +22,16 @@ def create_user(db: Session, user: schemas.UserCreate):
     return db_user
 
 def create_diary(db: Session, diary: schemas.DiaryCreate, user_id: int):
-    db_diary = models.Diary(**diary.dict(), user_id=user_id)
+    db_diary = models.Diary(title=diary.title, content=diary.content, image_url=diary.image_url, user_id=user_id)
     db.add(db_diary)
+    db.flush() # Flush to get the diary ID before committing
+
+    for tag_name in diary.tags:
+        db_tag = get_tag_by_name(db, tag_name)
+        if not db_tag:
+            db_tag = create_tag(db, schemas.TagCreate(name=tag_name))
+        add_tag_to_diary(db, db_diary.id, db_tag.id)
+
     db.commit()
     db.refresh(db_diary)
     return db_diary

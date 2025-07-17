@@ -1,14 +1,24 @@
-from fastapi import FastAPI, Depends, HTTPException, status, Request, UploadFile, File
+from fastapi import FastAPI, Depends, HTTPException, status, Request, UploadFile, File, BackgroundTasks, Body
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from typing import List, Optional
 
-from .database import SessionLocal, engine, Base
-from . import models, schemas, crud, auth
+from database import SessionLocal, engine, Base
+import models, schemas, crud, auth, ai_service
 
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
+
+# Allow all origins for development purposes
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Dependency to get DB session
 def get_db(request: Request):
@@ -17,6 +27,43 @@ def get_db(request: Request):
         yield db
     finally:
         db.close()
+
+async def run_ai_tagging_in_background(diary_id: int, content: str, db: Session):
+    """
+    Background task for AI tagging.
+    """
+    db_diary = crud.get_diary(db, diary_id=diary_id)
+    if not db_diary:
+        return # Diary might have been deleted
+
+    # v0.1: Rule-based tagging
+    rule_tags = ai_service.rule_based_tagging(db_diary.content)
+    for tag_name in rule_tags:
+        db_tag = crud.get_tag_by_name(db, tag_name=tag_name)
+        if not db_tag:
+            db_tag = crud.create_tag(db=db, tag=schemas.TagCreate(name=tag_name))
+        crud.add_tag_to_diary(db=db, diary_id=diary_id, tag_id=db_tag.id, source="ai_rule")
+
+    # v0.5: External AI API (Gemini) integration
+    gemini_result = await ai_service.gemini_analyze_text(db_diary.content)
+    if not gemini_result.get("mock_data"): # Only process if not mock data
+        # Process sentiment
+        sentiment_data = gemini_result.get("sentiment")
+        if sentiment_data:
+            # Update or create AnalysisResult for sentiment
+            pass # Implementation for AnalysisResult update/create
+
+        # Process entities as tags
+        entities = gemini_result.get("entities", [])
+        for entity in entities:
+            tag_name = entity.get("text")
+            if tag_name:
+                db_tag = crud.get_tag_by_name(db, tag_name=tag_name)
+                if not db_tag:
+                    db_tag = crud.create_tag(db=db, tag=schemas.TagCreate(name=tag_name))
+                crud.add_tag_to_diary(db=db, diary_id=diary_id, tag_id=db_tag.id, source="ai_model")
+    db.commit()
+
 
 @app.get("/")
 async def read_root(db: Session = Depends(get_db)):
@@ -51,13 +98,17 @@ async def read_users_me(current_user: schemas.UserResponse = Depends(auth.get_cu
 # Diary CRUD operations
 @app.post("/diaries", response_model=schemas.DiaryResponse)
 async def create_diary(
-    diary: schemas.DiaryCreate = Depends(),
+    background_tasks: BackgroundTasks,
+    diary: schemas.DiaryCreate = Body(...),
     current_user: schemas.UserResponse = Depends(auth.get_current_user),
     db: Session = Depends(get_db),
 ):
-    # Placeholder for image upload to S3. For now, image_url is directly from input.
-    # In a real scenario, you would upload the file to S3 and get the URL.
-    return crud.create_diary(db=db, diary=diary, user_id=current_user.id)
+    try:
+        db_diary = crud.create_diary(db=db, diary=diary, user_id=current_user.id)
+        background_tasks.add_task(run_ai_tagging_in_background, db_diary.id, db_diary.content, db)
+        return db_diary
+    except Exception as e:
+        raise HTTPException(status_code=422, detail=f"Failed to create diary: {e}")
 
 @app.get("/diaries", response_model=List[schemas.DiaryResponse])
 async def read_diaries(

@@ -1,5 +1,11 @@
-from typing import List, Dict
 import os
+from typing import List, Dict
+import google.generativeai as genai
+
+# Configure the Gemini API key
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+if GEMINI_API_KEY:
+    genai.configure(api_key=GEMINI_API_KEY)
 
 # Placeholder for rule-based tagging (v0.1)
 def rule_based_tagging(text: str) -> List[str]:
@@ -17,16 +23,40 @@ def rule_based_tagging(text: str) -> List[str]:
         tags.append("슬픔")
     return list(set(tags)) # Return unique tags
 
-# Placeholder for external AI API (Gemini) integration (v0.5)
+# Gemini API integration (v0.5)
 async def gemini_analyze_text(text: str) -> Dict:
-    # This is a placeholder. Actual implementation would involve:
-    # 1. Importing google.generativeai as genai
-    # 2. Setting genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-    # 3. Calling a model, e.g., model = genai.GenerativeModel('gemini-pro')
-    # 4. Processing the response for sentiment and entities.
-    print(f"[AI Service] Simulating Gemini analysis for: {text[:50]}...")
-    return {
-        "sentiment": {"label": "neutral", "score": 0.5},
-        "entities": [],
-        "mock_data": True # Indicate this is mock data
-    }
+    if not GEMINI_API_KEY or GEMINI_API_KEY == "your_gemini_api_key":
+        print("[AI Service] Gemini API key not configured. Returning mock data.")
+        return {
+            "sentiment": {"label": "neutral", "score": 0.5},
+            "entities": [],
+            "mock_data": True
+        }
+
+    try:
+        model = genai.GenerativeModel('gemini-pro')
+        # Simplified prompt for demonstration
+        prompt = f"""
+        Analyze the following diary entry. Extract the main sentiment (positive, negative, neutral) 
+        and up to 5 key entities (people, places, activities). 
+        Return the result in JSON format with keys 'sentiment' and 'entities'.
+        Each entity should have 'text' and 'type'.
+
+        Entry: "{text}"
+        """
+        response = await model.generate_content_async(prompt)
+        
+        # Basic parsing, assuming the model returns a JSON string
+        # In a real scenario, you'd want more robust parsing and error handling
+        import json
+        result = json.loads(response.text)
+        result["mock_data"] = False
+        return result
+
+    except Exception as e:
+        print(f"[AI Service] Error during Gemini API call: {e}")
+        return {
+            "sentiment": {"label": "error", "score": 0.0},
+            "entities": [],
+            "mock_data": True
+        }
