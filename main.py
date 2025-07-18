@@ -3,6 +3,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from typing import List, Optional
+from dotenv import load_dotenv
+
+load_dotenv()
 
 from database import SessionLocal, engine, Base
 import models, schemas, crud, auth, ai_service
@@ -320,3 +323,4 @@ async def search_diaries(
         (models.Diary.content.ilike(f"%{query}%") | models.Tag.name.ilike(f"%{query}%"))
     ).distinct().all()
     return search_results
+

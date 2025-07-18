@@ -11,3 +11,4 @@ email-validator
 python-multipart
 boto3
 pytest
+alembic 

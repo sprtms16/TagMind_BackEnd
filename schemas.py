@@ -30,7 +30,6 @@ class TokenData(BaseModel):
 class DiaryCreate(BaseModel):
     title: str
     content: str
-    image_url: Optional[str] = None
     tags: List[str] = []
 
 class DiaryUpdate(BaseModel):

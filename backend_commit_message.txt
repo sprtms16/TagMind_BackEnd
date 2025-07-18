@@ -1,3 +1,5 @@
-feat: Add boto3 to requirements.txt
+feat: Add unit tests for tag CRUD operations
 
-- Added boto3 to requirements.txt for S3 image upload functionality.
+- Created `tests/test_tags.py` with unit tests for `get_tag_by_name`, `create_tag`, `add_tag_to_diary`, and `remove_tag_from_diary`.
+- Configured `PYTHONPATH` in `Dockerfile` to ensure test modules are found.
+- Added `pytest` to `requirements.txt`.
