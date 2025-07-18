@@ -83,3 +83,33 @@ def remove_tag_from_diary(db: Session, diary_id: int, tag_id: int):
         db.delete(db_diary_tag)
         db.commit()
     return db_diary_tag
+
+def get_analysis_result_by_diary_id(db: Session, diary_id: int):
+    return db.query(models.AnalysisResult).filter(models.AnalysisResult.diary_id == diary_id).first()
+
+def create_analysis_result(db: Session, diary_id: int, sentiment: dict, entities: list):
+    db_analysis_result = models.AnalysisResult(
+        diary_id=diary_id,
+        sentiment=sentiment,
+        entities=entities
+    )
+    db.add(db_analysis_result)
+    db.commit()
+    db.refresh(db_analysis_result)
+    return db_analysis_result
+
+def update_analysis_result(db: Session, analysis_result_id: int, sentiment: dict, entities: list):
+    db_analysis_result = db.query(models.AnalysisResult).filter(models.AnalysisResult.id == analysis_result_id).first()
+    if db_analysis_result:
+        db_analysis_result.sentiment = sentiment
+        db_analysis_result.entities = entities
+        db.commit()
+        db.refresh(db_analysis_result)
+    return db_analysis_result
+
+def upsert_analysis_result(db: Session, diary_id: int, sentiment: dict, entities: list):
+    existing_result = get_analysis_result_by_diary_id(db, diary_id)
+    if existing_result:
+        return update_analysis_result(db, existing_result.id, sentiment, entities)
+    else:
+        return create_analysis_result(db, diary_id, sentiment, entities)

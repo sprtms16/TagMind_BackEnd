@@ -53,8 +53,13 @@ async def run_ai_tagging_in_background(diary_id: int, content: str, db: Session)
         # Process sentiment
         sentiment_data = gemini_result.get("sentiment")
         if sentiment_data:
-            # Update or create AnalysisResult for sentiment
-            pass # Implementation for AnalysisResult update/create
+            crud.upsert_analysis_result(
+                db=db,
+                diary_id=db_diary.id,
+                sentiment=sentiment_data,
+                entities=gemini_result.get("entities", [])
+            )
+
 
         # Process entities as tags
         entities = gemini_result.get("entities", [])
