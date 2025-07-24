@@ -70,7 +70,6 @@ def run_migrations_online() -> None:
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
-        url="postgresql://tagmind_user:tagmind_password@db:5432/tagmind_db",  # Hardcoded for Docker
     )
 
     with connectable.connect() as connection:

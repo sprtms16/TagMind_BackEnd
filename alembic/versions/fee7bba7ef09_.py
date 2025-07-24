@@ -1,4 +1,4 @@
-"""empty message
+"""Refactor models for Tag Packs and IAP
 
 Revision ID: fee7bba7ef09
 Revises:

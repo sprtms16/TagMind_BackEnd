@@ -9,11 +9,7 @@ from sqlalchemy import (
     Table,
 )
 from sqlalchemy.orm import relationship
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.sql import func
-
-# Base class for declarative models
-Base = declarative_base()
+from database import Base
 
 # Association table for many-to-many relationship between Diary and Tag
 # This table stores the relationships between diaries and tags.

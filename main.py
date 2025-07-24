@@ -3,6 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from typing import List, Optional
+from datetime import date
+import logging
 from dotenv import load_dotenv
 import json
 import uuid
@@ -142,7 +144,7 @@ async def initialize_data():
         db.commit()
     except Exception as e:
         # Rollback changes if any error occurs during initialization
-        print(f"Error initializing data: {e}")
+        logging.error(f"Error initializing data: {e}")
         db.rollback()
     finally:
         db.close()
@@ -208,14 +210,14 @@ async def create_diary(
 async def read_diaries(
     skip: int = 0,
     limit: int = 100,
-    date: Optional[str] = None,  # Optional date parameter for filtering diaries by creation date
+    date: Optional[date] = None,  # Optional date parameter for filtering diaries by creation date
     current_user: schemas.UserResponse = Depends(auth.get_current_user),
     db: Session = Depends(get_db),
 ):
     if date:
         # If date is provided, fetch diaries for that specific date
         return crud.get_diaries_by_date(
-            db, user_id=current_user.id, date_str=date, skip=skip, limit=limit
+            db, user_id=current_user.id, date_obj=date, skip=skip, limit=limit
         )
     # Otherwise, return all diaries for the user
     return crud.get_diaries(db, user_id=current_user.id, skip=skip, limit=limit)
