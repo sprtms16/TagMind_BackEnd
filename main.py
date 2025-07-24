@@ -306,6 +306,7 @@ async def purchase_tag_pack(
 
     # 3. Grant ownership to the user
     crud.grant_tag_pack_to_user(db, user_id=current_user.id, tag_pack_id=tag_pack.id)
+    db.commit()
 
     # 4. Return a success response
     return {"status": "success", "message": f"Successfully purchased {tag_pack.name}!"}

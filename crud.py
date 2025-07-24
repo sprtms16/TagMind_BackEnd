@@ -137,7 +137,7 @@ def create_tag(db: Session, tag: schemas.TagCreate):
         tag_pack_id=tag.tag_pack_id,
     )
     db.add(db_tag)
-    db.commit()
+    db.flush()
     db.refresh(db_tag)
     return db_tag
 
@@ -150,7 +150,7 @@ def create_tag_pack(db: Session, tag_pack: schemas.TagPackBase):
         product_id=tag_pack.product_id,
     )
     db.add(db_tag_pack)
-    db.commit()
+    db.flush()
     db.refresh(db_tag_pack)
     return db_tag_pack
 
