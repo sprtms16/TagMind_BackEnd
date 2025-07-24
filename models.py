@@ -9,6 +9,7 @@ from sqlalchemy import (
     Table,
 )
 from sqlalchemy.orm import relationship
+from sqlalchemy.sql import func
 from database import Base
 
 # Association table for many-to-many relationship between Diary and Tag
@@ -29,7 +30,7 @@ class User(Base):
     password_hash = Column(String, nullable=False)  # Hashed password for security
     nickname = Column(String, unique=True, index=True, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())  # Timestamp of user creation
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())  # Timestamp of last update
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())  # Timestamp of last update
 
     # Relationships to other models
     diaries = relationship("Diary", back_populates="owner")

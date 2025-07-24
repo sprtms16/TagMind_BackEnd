@@ -217,7 +217,7 @@ async def read_diaries(
     if date:
         # If date is provided, fetch diaries for that specific date
         return crud.get_diaries_by_date(
-            db, user_id=current_user.id, date_obj=date, skip=skip, limit=limit
+            db, user_id=current_user.id, date_str=date.isoformat(), skip=skip, limit=limit
         )
     # Otherwise, return all diaries for the user
     return crud.get_diaries(db, user_id=current_user.id, skip=skip, limit=limit)
