@@ -28,6 +28,8 @@ app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origin_regex=r"http://(localhost|127\.0\.0\.1):\d+",  # Allow all localhost ports
+    # For production, consider more restrictive origins like:
+    # allow_origins=["https://your-frontend-domain.com"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -192,6 +194,8 @@ async def create_diary(
     current_user: schemas.UserResponse = Depends(auth.get_current_user),
     db: Session = Depends(get_db),
 ):
+    # Image upload logic removed as per PR feedback. If image upload is needed,
+    # it should be handled by a separate dedicated service or endpoint.
     try:
         db_diary = crud.create_diary(db=db, diary=diary_data, user_id=current_user.id)
         return db_diary

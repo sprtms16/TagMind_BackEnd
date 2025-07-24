@@ -213,6 +213,6 @@ def search_diaries(db: Session, user_id: int, query: str):
                 | models.Tag.name.ilike(f"%{query}%")
             ),
         )
-        .distinct()
+        .distinct() # Consider performance implications for large datasets
         .all()
     )
