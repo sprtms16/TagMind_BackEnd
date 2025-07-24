@@ -12,7 +12,7 @@ import uuid
 # Load environment variables from .env file
 load_dotenv()
 
-from database import SessionLocal, engine, Base
+from database import SessionLocal, engine, Base, get_db
 import models, schemas, crud, auth
 
 # Create database tables if they don't exist
@@ -34,13 +34,7 @@ app.add_middleware(
 )
 
 
-# Dependency to get a database session
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+
 
 
 # Default tags for initial application setup

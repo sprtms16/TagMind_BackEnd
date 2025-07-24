@@ -1,1 +1,12 @@
-feat(frontend/backend): Refine calendar and search logic based on user feedback
+refactor(backend): Address PR feedback for backend (round 4)
+
+- **alembic.ini**: Updated `sqlalchemy.url` to use a placeholder value for improved security, relying solely on environment variables.
+- **alembic/versions/9a4319544195_.py**: Removed this migration file as it was destructive and redundant, posing a risk to data integrity.
+- **main.py**: Modified `crud.get_diaries_by_date` call to use `date_str=date.isoformat()` for correct type handling.
+- **models.py**: Added `from sqlalchemy.sql import func` import and set `User.updated_at` `server_default=func.now()` for consistency.
+- **alembic/versions/6762abfe9807_.py**: Removed duplicated `### end Alembic commands ###` comment.
+- **crud.py**: Changed `db.commit()` to `db.flush()` in `create_tag` and `create_tag_pack` functions to improve transactional atomicity.
+- **requirements.txt**: Removed `boto3` dependency as S3 functionality is no longer required.
+- **main.py & auth.py**: Moved `get_db` function to `database.py` to adhere to DRY principle and improve maintainability.
+- **docker-compose.yml**: Removed redundant `command` for `app` service.
+- **tests/test_tags.py**: Simplified `test_get_diaries_by_date` test setup for cleaner and more direct testing.

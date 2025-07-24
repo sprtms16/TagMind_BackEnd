@@ -243,15 +243,11 @@ def test_get_diaries_by_date(db):
     yesterday = today - timedelta(days=1)
 
     # Create a diary for today
-    diary_today = create_diary(db, DiaryCreate(title="Today's Diary", content=""), user.id)
-    # Manually set created_at to ensure it matches the date for filtering
-    diary_today.created_at = datetime.combine(today, datetime.min.time())
+    diary_today = Diary(title="Today's Diary", content="", user_id=user.id, created_at=datetime.combine(today, datetime.min.time()))
     db.add(diary_today)
-    db.commit()
 
     # Create a diary for yesterday
-    diary_yesterday = create_diary(db, DiaryCreate(title="Yesterday's Diary", content=""), user.id)
-    diary_yesterday.created_at = datetime.combine(yesterday, datetime.min.time())
+    diary_yesterday = Diary(title="Yesterday's Diary", content="", user_id=user.id, created_at=datetime.combine(yesterday, datetime.min.time()))
     db.add(diary_yesterday)
     db.commit()
 
