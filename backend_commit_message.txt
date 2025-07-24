@@ -1,5 +1,4 @@
-feat: Add unit tests for tag CRUD operations
+refactor(backend): Address PR feedback for backend (round 6)
 
-- Created `tests/test_tags.py` with unit tests for `get_tag_by_name`, `create_tag`, `add_tag_to_diary`, and `remove_tag_from_diary`.
-- Configured `PYTHONPATH` in `Dockerfile` to ensure test modules are found.
-- Added `pytest` to `requirements.txt`.
+- **main.py**: Removed image upload logic from `create_diary` endpoint and added a comment to clarify that it should be handled by a separate service if needed. Also added a comment to `allow_origin_regex` for production considerations.
+- **crud.py**: Added a comment to `search_diaries` regarding the performance implications of `distinct()` for large datasets.
