@@ -1,5 +1,1 @@
-feat: Add unit tests for tag CRUD operations
-
-- Created `tests/test_tags.py` with unit tests for `get_tag_by_name`, `create_tag`, `add_tag_to_diary`, and `remove_tag_from_diary`.
-- Configured `PYTHONPATH` in `Dockerfile` to ensure test modules are found.
-- Added `pytest` to `requirements.txt`.
+feat(frontend/backend): Refine calendar and search logic based on user feedback

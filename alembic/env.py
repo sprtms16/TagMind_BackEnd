@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 import os
 
 # Construct the absolute path to the .env file
-dotenv_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.env'))
+dotenv_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".env"))
 load_dotenv(dotenv_path=dotenv_path, override=True)
 
 # this is the Alembic Config object, which provides
@@ -26,6 +26,7 @@ if config.config_file_name is not None:
 # add your model's MetaData object here
 # for 'autogenerate' support
 from models import Base
+
 target_metadata = Base.metadata
 
 # other values from the config, defined by the needs of env.py,
@@ -69,12 +70,11 @@ def run_migrations_online() -> None:
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
+        url="postgresql://tagmind_user:tagmind_password@db:5432/tagmind_db",  # Hardcoded for Docker
     )
 
     with connectable.connect() as connection:
-        context.configure(
-            connection=connection, target_metadata=target_metadata
-        )
+        context.configure(connection=connection, target_metadata=target_metadata)
 
         with context.begin_transaction():
             context.run_migrations()
