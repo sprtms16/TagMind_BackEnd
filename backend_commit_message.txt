@@ -1,4 +1,0 @@
-refactor(backend): Address PR feedback for backend (round 6)
-
-- **main.py**: Removed image upload logic from `create_diary` endpoint and added a comment to clarify that it should be handled by a separate service if needed. Also added a comment to `allow_origin_regex` for production considerations.
-- **crud.py**: Added a comment to `search_diaries` regarding the performance implications of `distinct()` for large datasets.
