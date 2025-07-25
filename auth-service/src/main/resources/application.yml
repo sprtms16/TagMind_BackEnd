@@ -14,7 +14,8 @@ spring:
       ddl-auto: update
     show-sql: true
 
-# Firebase 서비스 계정 키 파일 경로 (환경 변수로 주입됨)
-# google:
-#   application:
-#     credentials: /app/serviceAccountKey.json
+# JWT 설정
+jwt:
+  secret: ${JWT_SECRET:your-very-secret-key-that-is-at-least-256-bits-long}
+  access-token-expiration-ms: 3600000 # 1시간 (밀리초)
+  refresh-token-expiration-ms: 604800000 # 7일 (밀리초)
