@@ -10,11 +10,11 @@ import java.util.Date
 
 @Component
 class JwtTokenProvider(
-    @Value("${jwt.secret}")
+    @Value("\${jwt.secret}")
     private val secret: String,
-    @Value("${jwt.access-token-expiration-ms}")
+    @Value("\${jwt.access-token-expiration-ms}")
     private val accessTokenExpirationMs: Long,
-    @Value("${jwt.refresh-token-expiration-ms}")
+    @Value("\${jwt.refresh-token-expiration-ms}")
     private val refreshTokenExpirationMs: Long
 ) {
 

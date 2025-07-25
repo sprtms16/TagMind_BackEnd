@@ -1,6 +1,6 @@
 from pydantic import BaseModel, EmailStr
 from typing import Optional, List
-from datetime import datetime
+from datetime import datetime, date
 
 
 # --- User Schemas ---
@@ -116,3 +116,12 @@ class PurchaseRequest(BaseModel):
 class PurchaseResponse(BaseModel):
     status: str
     message: str
+
+
+# --- Calendar Schemas ---
+class CalendarDaySummary(BaseModel):
+    date: date
+    count: int
+
+    class Config:
+        from_attributes = True
