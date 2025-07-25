@@ -1,6 +1,5 @@
 from fastapi import FastAPI, Depends, HTTPException, status, Request, Body
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import date
@@ -152,38 +151,17 @@ async def read_root():
     return {"message": "Welcome to TagMind Backend (Revised)!"}
 
 
-# --- Authentication Endpoints ---
-# User registration endpoint
-@app.post("/auth/signup", response_model=schemas.UserResponse)
-async def signup(user: schemas.UserCreate, db: Session = Depends(get_db)):
-    db_user = crud.get_user_by_email(db, email=user.email)
-    if db_user:
-        raise HTTPException(status_code=400, detail="Email already registered")
-    return crud.create_user(db=db, user=user)
-
-
-# User login endpoint to obtain JWT token
-@app.post("/auth/token", response_model=schemas.Token)
-async def login_for_access_token(
-    form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)
-):
-    user = crud.get_user_by_email(db, email=form_data.username)
-    if not user or not crud.verify_password(form_data.password, user.password_hash):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    access_token = auth.create_access_token(data={"sub": user.email})
-    return {"access_token": access_token, "token_type": "bearer"}
-
-
 # Get current authenticated user's details
-@app.get("/users/me", response_model=schemas.UserResponse)
+@app.get("/users/me")
 async def read_users_me(
-    current_user: schemas.UserResponse = Depends(auth.get_current_user),
+    current_user: dict = Depends(auth.get_current_user),
 ):
-    return current_user
+    # crud.get_user_by_email을 사용하여 DB에서 최신 사용자 정보를 가져옵니다.
+    # current_user['id']는 토큰의 'sub' 클레임 (사용자 ID) 입니다.
+    db_user = crud.get_user_by_id(db, user_id=current_user['id'])
+    if db_user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    return db_user
 
 
 # --- Diary CRUD Endpoints ---
@@ -191,7 +169,7 @@ async def read_users_me(
 @app.post("/diaries", response_model=schemas.DiaryResponse)
 async def create_diary(
     diary_data: schemas.DiaryCreate,
-    current_user: schemas.UserResponse = Depends(auth.get_current_user),
+    current_user: dict = Depends(auth.get_current_user),
     db: Session = Depends(get_db),
 ):
     # Image upload logic removed as per PR feedback. If image upload is needed,
@@ -209,7 +187,7 @@ async def read_diaries(
     skip: int = 0,
     limit: int = 100,
     date: Optional[date] = None,  # Optional date parameter for filtering diaries by creation date
-    current_user: schemas.UserResponse = Depends(auth.get_current_user),
+    current_user: dict = Depends(auth.get_current_user),
     db: Session = Depends(get_db),
 ):
     if date:
@@ -225,7 +203,7 @@ async def read_diaries(
 @app.get("/diaries/{diary_id}", response_model=schemas.DiaryResponse)
 async def read_diary(
     diary_id: int,
-    current_user: schemas.UserResponse = Depends(auth.get_current_user),
+    current_user: dict = Depends(auth.get_current_user),
     db: Session = Depends(get_db),
 ):
     db_diary = crud.get_diary(db, diary_id=diary_id)
@@ -239,7 +217,7 @@ async def read_diary(
 async def update_diary(
     diary_id: int,
     diary: schemas.DiaryUpdate,
-    current_user: schemas.UserResponse = Depends(auth.get_current_user),
+    current_user: dict = Depends(auth.get_current_user),
     db: Session = Depends(get_db),
 ):
     db_diary = crud.get_diary(db, diary_id=diary_id)
@@ -252,7 +230,7 @@ async def update_diary(
 @app.delete("/diaries/{diary_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_diary(
     diary_id: int,
-    current_user: schemas.UserResponse = Depends(auth.get_current_user),
+    current_user: dict = Depends(auth.get_current_user),
     db: Session = Depends(get_db),
 ):
     db_diary = crud.get_diary(db, diary_id=diary_id)
@@ -266,7 +244,7 @@ async def delete_diary(
 # Get all available tags for the current user (default and purchased)
 @app.get("/tags", response_model=List[schemas.TagResponse])
 async def get_available_tags(
-    current_user: schemas.UserResponse = Depends(auth.get_current_user),
+    current_user: dict = Depends(auth.get_current_user),
     db: Session = Depends(get_db),
 ):
     """Returns all tags available to the current user (default + purchased)."""
@@ -285,7 +263,7 @@ async def get_tag_store_packs(db: Session = Depends(get_db)):
 @app.post("/iap/purchase", response_model=schemas.PurchaseResponse)
 async def purchase_tag_pack(
     purchase_request: schemas.PurchaseRequest,
-    current_user: schemas.UserResponse = Depends(auth.get_current_user),
+    current_user: dict = Depends(auth.get_current_user),
     db: Session = Depends(get_db),
 ):
     """
@@ -315,8 +293,34 @@ async def purchase_tag_pack(
 @app.get("/search", response_model=List[schemas.DiaryResponse])
 async def search_diaries(
     query: str,
-    current_user: schemas.UserResponse = Depends(auth.get_current_user),
+    current_user: dict = Depends(auth.get_current_user),
     db: Session = Depends(get_db),
 ):
     return crud.search_diaries(db, user_id=current_user.id, query=query)
 
+
+# --- Calendar-related Endpoints ---
+# Get a summary of diary entries for a specific month
+@app.get("/calendar/summary/{year}/{month}", response_model=List[schemas.CalendarDaySummary])
+async def get_calendar_summary(
+    year: int,
+    month: int,
+    current_user: dict = Depends(auth.get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Returns a summary for each day of the given month that has at least one diary entry.
+    Each summary includes the date and the number of entries for that day.
+    """
+
+    # Validate year and month to prevent invalid date ranges
+    if not (1 <= month <= 12):
+        raise HTTPException(status_code=400, detail="Month must be between 1 and 12.")
+    if not (1900 <= year <= 2100):
+        raise HTTPException(status_code=400, detail="Year must be between 1900 and 2100.")
+
+    # Fetch the summary data from the database
+    summary_data = crud.get_diary_summary_for_month(
+        db, user_id=current_user.id, year=year, month=month
+    )
+    return summary_data

@@ -1,28 +1,55 @@
+version: '3.8'
+
 services:
-  app:
-    build: .
+  # 1. API Gateway 서비스
+  gateway:
+    build: ./gateway
     ports:
-      - "8000:8000"
-    volumes:
-      - .:/app
+      - "8080:8080"
+    depends_on:
+      - auth-service
+      - resource-service
+    networks:
+      - tagmind-net
+
+  # 2. Kotlin 인증 서비스
+  auth-service:
+    build: ./auth-service
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/tagmind_db
+      - SPRING_DATASOURCE_USERNAME=tagmind_user
+      - SPRING_DATASOURCE_PASSWORD=tagmind_password
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/serviceAccountKey.json
     depends_on:
       - db
-    environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
-      # Add other environment variables here as needed
-    env_file:
-      - .env
+    networks:
+      - tagmind-net
 
+  # 3. FastAPI 리소스 서비스 (기존 backend)
+  resource-service:
+    build: .  # 이제 docker-compose.yml과 같은 위치에 있으므로 경로를 '.'으로 변경
+    environment:
+      - DATABASE_URL=postgresql://tagmind_user:tagmind_password@db:5432/tagmind_db
+    depends_on:
+      - db
+    networks:
+      - tagmind-net
+
+  # 4. PostgreSQL 데이터베이스 서비스
   db:
-    image: postgres:13-alpine
-    ports:
-      - "5432:5432"
+    image: postgres:15
+    environment:
+      - POSTGRES_DB=tagmind_db
+      - POSTGRES_USER=tagmind_user
+      - POSTGRES_PASSWORD=tagmind_password
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
+    networks:
+      - tagmind-net
+
+networks:
+  tagmind-net:
+    driver: bridge
 
 volumes:
   postgres_data:

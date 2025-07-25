@@ -1,0 +1,20 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: auth-service
+  datasource:
+    url: jdbc:postgresql://db:5432/tagmind_db
+    username: tagmind_user
+    password: tagmind_password
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+# Firebase 서비스 계정 키 파일 경로 (환경 변수로 주입됨)
+# google:
+#   application:
+#     credentials: /app/serviceAccountKey.json
